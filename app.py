@@ -1,4 +1,4 @@
-from flask import Flask, render_template,request
+from flask import Flask, render_template,request,url_for,redirect
 import pickle
 import numpy as np
 
@@ -46,5 +46,14 @@ def recommend():
     print( data)
 
     return render_template('recommend.html',data=data)
+
+
+
+@app.route('/recommend_image')
+def redirect_to_streamlit():
+    streamlit_url = 'http://localhost:8501'
+    return redirect(streamlit_url)
+
+
 if __name__ == '__main__':
     app.run(debug=True)
