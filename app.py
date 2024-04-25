@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 
 popular_df =pickle.load(open('popular.pkl','rb'))
-pt =pickle.load(open('pt.pkl','rb'))
+# pt =pickle.load(open('pt.pkl','rb'))
 products =pickle.load(open('products.pkl','rb'))
 similarity_score =pickle.load(open('similarity_score.pkl','rb'))
 app= Flask(__name__)
@@ -12,34 +12,41 @@ app= Flask(__name__)
 
 def index():
      return render_template('index.html',
-                            product_name=list(popular_df['product_name'].values),
-                            price=list(popular_df['actual_price'].values),
-                            rating=list(popular_df['rating'].values),
-                            img_link=list(popular_df['img_link'].values),
+                            product_name=list(popular_df['ProductTitle'].values),
+                            
+                            img_link=list(popular_df['ImageURL'].values),
                             )
 
 @app.route('/recommend_books',methods=['post'])
 def recommend():
     user_input = request.form.get('user_input')
-    matching_products = [product for product in pt.index if user_input.lower() in product.lower()]
-    
+    matches = products[products['name'].str.contains(user_input, case=False)]
     data = []
 
-    if matching_products:
-        product_name = matching_products[0]  # Selecting the first matched product
-        index = pt.index.get_loc(product_name)
-        similar_items = sorted(list(enumerate(similarity_score[index])), key=lambda x: x[1], reverse=True)[1:5]
-        print("Similar products for '{}':".format(product_name))
-        
-        for i, (product_index, score) in enumerate(similar_items, 1):
-            item = []
-            temp_df = products[products['product_name'] == pt.index[product_index]]
-            item.append(temp_df.drop_duplicates('product_name')['product_name'].values[0])
-            item.append(temp_df.drop_duplicates('product_name')['rating'].values[0])
-            item.append(temp_df.drop_duplicates('product_name')['actual_price'].values[0])
-            item.append(temp_df.drop_duplicates('product_name')['img_link'].values[0])
-            data.append(item)
+    if not matches.empty:
+        searched_index = matches.index[0]  # Get the index of the first match
+        similar_items_all = []
+        for index in matches.index:
+            similar_items = sorted(list(enumerate(similarity_score[index])), key=lambda x: x[1], reverse=True)[1:6]
+            similar_items_all.extend(similar_items)
+        similar_items_all = sorted(similar_items_all, key=lambda x: x[1], reverse=True)
 
+        recommended_indices = set()  # To keep track of recommended product indices
+        recommended_count = 0
+
+        for product_index, score in similar_items_all:
+            if product_index != searched_index and product_index not in recommended_indices:
+                # Add the product index to the set of recommended indices
+                recommended_indices.add(product_index)
+                recommended_count += 1
+                if recommended_count > 5:
+                    break  # Stop when 5 unique recommendations are found
+                item = []
+                temp_df = products.iloc[product_index]
+                item.append(temp_df['ProductTitle'])
+
+                item.append(temp_df['ImageURL'])
+                data.append(item)
     else:
         print("No products found matching the specified partial name.")
 

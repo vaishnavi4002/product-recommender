@@ -14,6 +14,10 @@ from numpy.linalg import norm
 feature_list = np.array(pickle.load(open('embeddings.pkl','rb')))
 filenames = pickle.load(open('filenames.pkl','rb'))
 
+with open('products.pkl', 'rb') as f:
+    product_data = pickle.load(f)
+    product_titles = product_data['ProductTitle']
+
 model = VGG16(weights='imagenet', include_top=False, input_shape=(224, 224, 3))
 model.trainable = False
 
@@ -70,6 +74,7 @@ if uploaded_file is not None:
 
         with col1:
             st.image(filenames[indices[0][0]], width=100)
+            
             st.button('Purchase', key='purchase1')
         with col2:
             st.image(filenames[indices[0][1]] ,width=100)
